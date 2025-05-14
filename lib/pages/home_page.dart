@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:couchup/services/now_playing_service.dart';
+import 'package:couchup/services/top_rated_service.dart';
+import 'package:couchup/services/popular_service.dart';
+import 'package:couchup/services/upcoming_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,6 +13,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final NowPlayingService _nowPlayingService = NowPlayingService();
+  final TopRatedService _topRatedService = TopRatedService();
+  final PopularService _popularService = PopularService();
+  final UpcomingService _upcomingService = UpcomingService();
   List<dynamic> _movies = [];
 
   @override
@@ -19,10 +25,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadMovies() async {
-    final movies = await _nowPlayingService.getNowPlayingMovies();
+    final now_playing_movies = await _nowPlayingService.getNowPlayingMovies();
+    final top_rated_movies = await _topRatedService.getTopRatedMovies();
+    final popular_movies = await _popularService.getPopularMovies();
+    final upcoming_movies = await _upcomingService.getUpcomingMovies();
     setState(() {
-      _movies = movies;
-      print(_movies);
+      _movies = [...now_playing_movies, ...top_rated_movies, ...popular_movies, ...upcoming_movies];
+      // print(_movies);
     });
   }
 
