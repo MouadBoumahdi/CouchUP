@@ -1,21 +1,19 @@
 class Movie {
-  final String backdrop_path;
   final String title;
-  final String overview;
-  final String popularity;
+  final String backdrop_path;
   final String poster_path;
-  final String release_date;
-  final double vote_average;
-  final int vote_count;
 
   Movie({
-    required this.backdrop_path,
     required this.title,
-    required this.overview,
-    required this.popularity,
+    required this.backdrop_path,
     required this.poster_path,
-    required this.release_date,
-    required this.vote_average,
-    required this.vote_count
   });
+
+  factory Movie.fromJson(Map<String, dynamic> json) {
+    return Movie(
+      title: json['title'],
+      backdrop_path: 'https://image.tmdb.org/t/p/w500${json['backdrop_path']}',
+      poster_path: 'https://image.tmdb.org/t/p/w500${json['poster_path']}',
+    );
+  }
 }
