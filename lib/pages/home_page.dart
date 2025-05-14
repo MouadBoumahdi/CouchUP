@@ -31,7 +31,7 @@ class _HomePageState extends State<HomePage> {
     final upcoming_movies = await _upcomingService.getUpcomingMovies();
     setState(() {
       _movies = [...now_playing_movies, ...top_rated_movies, ...popular_movies, ...upcoming_movies];
-      // print(_movies);
+      print(_movies[0]);
     });
   }
 
