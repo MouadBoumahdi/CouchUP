@@ -1,8 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:couchup/models/class.dart';
+import 'package:couchup/pages/overview_page.dart';
 import 'package:couchup/services/now_playing_service.dart';
-import 'package:couchup/services/top_rated_service.dart';
 import 'package:couchup/services/popular_service.dart';
+import 'package:couchup/services/top_rated_service.dart';
 import 'package:couchup/services/upcoming_service.dart';
+import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,51 +15,420 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final NowPlayingService _nowPlayingService = NowPlayingService();
-  final TopRatedService _topRatedService = TopRatedService();
-  final PopularService _popularService = PopularService();
-  final UpcomingService _upcomingService = UpcomingService();
-  List<dynamic> _movies = [];
+  late Future<List<Movie>> nowPlaying;
+  late Future<List<Movie>> upComing;
+  late Future<List<Movie>> topRated;
+  late Future<List<Movie>> popularService;
 
   @override
   void initState() {
     super.initState();
-    _loadMovies();
-  }
-
-  Future<void> _loadMovies() async {
-    final now_playing_movies = await _nowPlayingService.getNowPlayingMovies();
-    final top_rated_movies = await _topRatedService.getTopRatedMovies();
-    final popular_movies = await _popularService.getPopularMovies();
-    final upcoming_movies = await _upcomingService.getUpcomingMovies();
-    setState(() {
-      _movies = [...now_playing_movies, ...top_rated_movies, ...popular_movies, ...upcoming_movies];
-      print(_movies[0]);
-    });
+    nowPlaying = NowPlayingService().getNowPlayingMovies();
+    upComing = UpcomingService().getUpcomingMovies();
+    topRated = TopRatedService().getTopRatedMovies();
+    popularService = PopularService().getPopularMovies();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // backgroundColor: Colors.deepPurpleAccent,
       appBar: AppBar(
-        title: const Text("home page"),
+        // backgroundColor: Colors.deepPurple,
+        title: const Text(
+          "CouchUP",
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+        ),
         centerTitle: true,
+        leading: Padding(padding: const EdgeInsets.all(8.0), child: Image.asset("assets/images/couch_up_logo.jpg", width: 40, height: 40)),
+        actions: const [
+          Icon(Icons.search),
+          SizedBox(width: 20),
+          Icon(Icons.bookmark),
+          SizedBox(width: 10),
+        ],
       ),
-      body: _movies.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: _movies.length,
-              itemBuilder: (context, index) {
-                final movie = _movies[index];
-                return ListTile(
-                  title: Text(movie['title']),
-                  leading: Image.network(
-                    'https://image.tmdb.org/t/p/w500${movie['poster_path']}',
-                  ),
-                  subtitle: Text(movie['overview']),
-                );
-              },
-            ),
+      body: Padding(
+        padding: const EdgeInsets.all(8),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Now Playing",
+                // textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 10),
+              FutureBuilder<List<Movie>>(
+                future: nowPlaying,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(child: Text("Error: ${snapshot.error}"));
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text("No movies found."));
+                  }
+
+                  final movies = snapshot.data!;
+                  return CarouselSlider.builder(
+                    itemCount: movies.length,
+                    itemBuilder: (context, index, realIndex) {
+                      final movie = movies[index];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => MovieDetailsPage(movie: movie),
+                            ),
+                          );
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.network(
+                                movie.backdrop_path,
+                                fit: BoxFit.cover,
+                                errorBuilder:
+                                    (context, error, stackTrace) =>
+                                        const Center(child: Icon(Icons.error)),
+                                loadingBuilder: (
+                                  context,
+                                  child,
+                                  loadingProgress,
+                                ) {
+                                  if (loadingProgress == null) return child;
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                },
+                              ),
+                              Positioned(
+                                bottom: 10,
+                                left: 10,
+                                right: 10,
+                                child: Text(
+                                  movie.title,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    options: CarouselOptions(
+                      height: 200,
+                      autoPlay: true,
+                      enlargeCenterPage: true,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "Upcoming",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 250,
+                child: FutureBuilder<List<Movie>>(
+                  future: upComing,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(child: Text("Error: ${snapshot.error}"));
+                    }
+
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(
+                        child: Text("No upcoming movies found."),
+                      );
+                    }
+
+                    final movies = snapshot.data!;
+                    return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: movies.length,
+                      itemBuilder: (context, index) {
+                        final movie = movies[index];
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => MovieDetailsPage(movie: movie),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 150,
+                            margin: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    movie.poster_path,
+                                    height: 200,
+                                    width: 150,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Center(
+                                              child: Icon(Icons.error),
+                                            ),
+                                    loadingBuilder: (
+                                      context,
+                                      child,
+                                      loadingProgress,
+                                    ) {
+                                      if (loadingProgress == null) return child;
+                                      return const Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  movie.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              const Text(
+                "Top Rated",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 250,
+                child: FutureBuilder<List<Movie>>(
+                  future: topRated,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(child: Text("Error: ${snapshot.error}"));
+                    }
+
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(
+                        child: Text("No upcoming movies found."),
+                      );
+                    }
+
+                    final movies = snapshot.data!;
+                    return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: movies.length,
+                      itemBuilder: (context, index) {
+                        final movie = movies[index];
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => MovieDetailsPage(movie: movie),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 150,
+                            margin: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    movie.poster_path,
+                                    height: 200,
+                                    width: 150,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Center(
+                                              child: Icon(Icons.error),
+                                            ),
+                                    loadingBuilder: (
+                                      context,
+                                      child,
+                                      loadingProgress,
+                                    ) {
+                                      if (loadingProgress == null) return child;
+                                      return const Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  movie.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              const Text(
+                "Popular",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 250,
+                child: FutureBuilder<List<Movie>>(
+                  future: popularService,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(child: Text("Error: ${snapshot.error}"));
+                    }
+
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(
+                        child: Text("No upcoming movies found."),
+                      );
+                    }
+
+                    final movies = snapshot.data!;
+                    return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: movies.length,
+                      itemBuilder: (context, index) {
+                        final movie = movies[index];
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => MovieDetailsPage(movie: movie),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 150,
+                            margin: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    movie.poster_path,
+                                    height: 200,
+                                    width: 150,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Center(
+                                              child: Icon(Icons.error),
+                                            ),
+                                    loadingBuilder: (
+                                      context,
+                                      child,
+                                      loadingProgress,
+                                    ) {
+                                      if (loadingProgress == null) return child;
+                                      return const Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  movie.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
