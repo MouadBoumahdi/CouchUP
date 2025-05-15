@@ -1,11 +1,12 @@
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:couchup/models/class.dart';
+import 'package:couchup/model/movie.dart';
 import 'package:couchup/pages/overview_page.dart';
 import 'package:couchup/services/now_playing_service.dart';
 import 'package:couchup/services/popular_service.dart';
 import 'package:couchup/services/top_rated_service.dart';
 import 'package:couchup/services/upcoming_service.dart';
 import 'package:flutter/material.dart';
+import 'package:couchup/pages/custom_search_delegate.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -41,11 +42,16 @@ class _HomePageState extends State<HomePage> {
         ),
         centerTitle: true,
         leading: Padding(padding: const EdgeInsets.all(8.0), child: Image.asset("assets/images/couch_up_logo.jpg", width: 40, height: 40)),
-        actions: const [
-          Icon(Icons.search),
-          SizedBox(width: 20),
-          Icon(Icons.bookmark),
-          SizedBox(width: 10),
+        actions: [
+          IconButton(
+             icon : const Icon(Icons.search),
+             onPressed: (){
+              showSearch(context: context, delegate: CustomSearchDelegate());
+             },
+          ),
+          const SizedBox(width: 20),
+          const Icon(Icons.bookmark),
+          const SizedBox(width: 10),
         ],
       ),
       body: Padding(

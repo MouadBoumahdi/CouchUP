@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:couchup/models/class.dart';
+import 'package:couchup/model/movie.dart';
 import 'package:http/http.dart' as http;
 
 class UpcomingService {

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../models/class.dart';
+import '../model/movie.dart';
 import 'package:http/http.dart' as http;
 
 class TopRatedService {

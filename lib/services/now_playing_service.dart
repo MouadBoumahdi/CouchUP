@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/class.dart';
+import '../model/movie.dart';
 
 class NowPlayingService {
   final String _baseUrl = 'https://api.themoviedb.org/3/movie/now_playing';
