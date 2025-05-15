@@ -1,5 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:couchup/model/movie.dart';
+import 'package:couchup/pages/custom_search_delegate.dart';
 import 'package:couchup/services/now_playing_service.dart';
 import 'package:couchup/services/popular_service.dart';
 import 'package:couchup/services/top_rated_service.dart';
@@ -35,11 +36,17 @@ class _HomePageState extends State<HomePage> {
         title: const Text("Home Page"),
         centerTitle: true,
         leading: const Icon(Icons.menu),
-        actions: const [
-          Icon(Icons.search),
-          SizedBox(width: 20),
-          Icon(Icons.bookmark),
-          SizedBox(width: 10),
+        actions: [
+          IconButton(
+             icon : const Icon(Icons.search),
+             onPressed: (){
+              showSearch(context: context, delegate: CustomSearchDelegate());
+             },
+          ),
+         
+          const SizedBox(width: 20),
+          const Icon(Icons.bookmark),
+          const SizedBox(width: 10),
         ],
       ),
       body: Padding(
